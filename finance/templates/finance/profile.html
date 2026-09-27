@@ -1,0 +1,45 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block breadcrumb %}Profile{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">YOUR ACCOUNT</p>
+  <h1>Personal profile</h1>
+  <p class="heading-copy">Update the details associated with your Ledgerly account.</p>
+</div>
+
+<form method="post" class="panel profile-form-panel" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="form-errors">{{ form.non_field_errors }}</div>
+  {% endif %}
+  <div class="form-grid">
+    <div class="field-wrap">
+      <label for="{{ form.username.id_for_label }}">Username</label>
+      {{ form.username }}
+      {% for error in form.username.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+    </div>
+    <div class="field-wrap">
+      <label for="{{ form.email.id_for_label }}">Email</label>
+      {{ form.email }}
+      {% for error in form.email.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+    </div>
+    <div class="field-wrap">
+      <label for="{{ form.first_name.id_for_label }}">First name</label>
+      {{ form.first_name }}
+      {% for error in form.first_name.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+    </div>
+    <div class="field-wrap">
+      <label for="{{ form.last_name.id_for_label }}">Last name</label>
+      {{ form.last_name }}
+      {% for error in form.last_name.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="button button-primary" type="submit"><i data-lucide="save"></i>Save profile</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account · Ledgerly</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'finance/app.css' %}">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="auth-body">
+  <main class="auth-layout">
+    <section class="auth-art">
+      <a class="brand auth-brand" href="{% url 'register' %}"><span class="brand-mark"><i data-lucide="landmark"></i></span><span class="brand-name">ledgerly<span>.</span><small>PERSONAL FINANCE</small></span></a>
+      <div class="auth-message"><p class="eyebrow">START WITH A CLEAR PICTURE</p><h1>Make your money make sense.</h1><p>One private space for your spending, saving, and plans ahead.</p></div>
+      <div class="auth-orbit orbit-one"></div><div class="auth-orbit orbit-two"></div>
+      <div class="auth-art-footer"><i data-lucide="lock-keyhole"></i><span>Your account keeps your financial records separate.</span></div>
+    </section>
+    <section class="auth-form-side">
+      <div class="auth-form-wrap">
+        <p class="eyebrow">YOUR OWN MONEY SPACE</p>
+        <h2>Create your account</h2>
+        <p class="auth-subtitle">A username and password are all you need.</p>
+        <form method="post" class="auth-form" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+          <div class="field-wrap"><label for="id_username">Username</label><input class="form-control" id="id_username" name="username" type="text" autocomplete="username" value="{{ form.username.value|default:'' }}" required autofocus>{% for error in form.username.errors %}<small class="field-error">{{ error }}</small>{% endfor %}<small class="field-help">Use 150 characters or fewer. Letters, digits, and @/./+/-/_ only.</small></div>
+          <div class="field-wrap"><label for="id_password1">Password</label><input class="form-control" id="id_password1" name="password1" type="password" autocomplete="new-password" required>{% for error in form.password1.errors %}<small class="field-error">{{ error }}</small>{% endfor %}<small class="field-help">Use at least 8 characters and avoid common or entirely numeric passwords.</small></div>
+          <div class="field-wrap"><label for="id_password2">Confirm password</label><input class="form-control" id="id_password2" name="password2" type="password" autocomplete="new-password" required>{% for error in form.password2.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</div>
+          <button class="button button-primary auth-submit" type="submit"><i data-lucide="user-round-plus"></i>Create account</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
+      </div>
+      <span class="auth-footnote">A quieter way to keep your money in view.</span>
+    </section>
+  </main>
+  <script>if (window.lucide) window.lucide.createIcons();</script>
+</body>
+</html>

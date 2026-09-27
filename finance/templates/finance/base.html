@@ -1,0 +1,124 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f7f2" />
+    <title>{% block title %}Overview{% endblock %} · Ledgerly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'finance/app.css' %}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="{% url 'finance:dashboard' %}">
+          <span class="brand-mark"><i data-lucide="landmark"></i></span>
+          <span class="brand-name"
+            >ledgerly<span>.</span><small>PERSONAL FINANCE</small></span
+          >
+        </a>
+        <p class="nav-label">WORKSPACE</p>
+        <nav class="primary-nav" aria-label="Main navigation">
+          <a
+            class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+            href="{% url 'finance:dashboard' %}"
+            ><i data-lucide="layout-dashboard"></i><span>Overview</span></a
+          >
+          <a
+            class="nav-link {% if request.resolver_match.url_name == 'transactions' or request.resolver_match.url_name == 'transaction_add' or request.resolver_match.url_name == 'transaction_edit' %}active{% endif %}"
+            href="{% url 'finance:transactions' %}"
+            ><i data-lucide="arrow-left-right"></i><span>Transactions</span></a
+          >
+          <a
+            class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}"
+            href="{% url 'finance:analytics' %}"
+            ><i data-lucide="chart-no-axes-combined"></i
+            ><span>Analytics</span></a
+          >
+          <a
+            class="nav-link {% if request.resolver_match.url_name == 'budgets' or request.resolver_match.url_name == 'budget_edit' %}active{% endif %}"
+            href="{% url 'finance:budgets' %}"
+            ><i data-lucide="wallet-cards"></i><span>Budgets</span></a
+          >
+          <a
+            class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+            href="{% url 'profile' %}"
+            ><i data-lucide="user-round-pen"></i><span>Profile</span></a
+          >
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-note">
+            <span class="note-icon"><i data-lucide="sparkles"></i></span>
+            <p>Small choices, clearer money.</p>
+          </div>
+          <div class="profile-chip">
+            <span class="profile-avatar">{{ request.user.username|first|upper }}</span
+            ><span
+              ><strong>{{ request.user.username }}</strong><small>Personal account</small></span
+            ><i data-lucide="chevron-down"></i>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <button
+            class="icon-button mobile-menu"
+            type="button"
+            id="menu-toggle"
+            aria-label="Open navigation"
+          >
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="breadcrumb">
+            <span>Workspace</span><i data-lucide="chevron-right"></i
+            ><strong>{% block breadcrumb %}Overview{% endblock %}</strong>
+          </div>
+          <div class="topbar-actions">
+            <button
+              class="icon-button"
+              type="button"
+              id="theme-toggle"
+              aria-label="Toggle light and dark mode"
+              title="Toggle theme"
+            >
+              <i data-lucide="moon"></i>
+            </button>
+            <a
+              class="button button-primary button-compact"
+              href="{% url 'finance:transaction_add' %}"
+              ><i data-lucide="plus"></i><span>New transaction</span></a
+            >
+            <form action="{% url 'logout' %}" method="post" class="logout-form">
+              {% csrf_token %}
+              <button class="icon-button" type="submit" aria-label="Sign out" title="Sign out">
+                <i data-lucide="log-out"></i>
+              </button>
+            </form>
+          </div>
+        </header>
+        <section class="page-content">
+          {% if messages %}
+          <div class="messages" aria-live="polite">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">
+              <i data-lucide="circle-check"></i>{{ message }}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %} {% block content %}{% endblock %}
+        </section>
+      </main>
+    </div>
+    <script src="{% static 'finance/app.js' %}" defer></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

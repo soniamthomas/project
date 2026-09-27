@@ -1,0 +1,235 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block breadcrumb %}Analytics{% endblock %}
+
+{% block content %}
+<div class="page-heading heading-row">
+  <div>
+    <p class="eyebrow">THE STORY BEHIND YOUR SPENDING</p>
+    <h1>Financial analytics</h1>
+    <p class="heading-copy">Patterns and pivots for {{ bounds.start|date:'M j' }} &ndash; {{ bounds.end|date:'M j, Y' }}.</p>
+  </div>
+</div>
+<form class="filter-bar" method="get" action="{% url 'finance:analytics' %}">
+  <div class="filter-title">
+    <i data-lucide="calendar-range"></i><span>Date range</span>
+  </div>
+  <label class="sr-only" for="period-filter">Date range</label
+  ><select
+    id="period-filter"
+    name="period"
+    class="form-control compact-control"
+    data-selected-period="{{ bounds.period }}"
+  >
+    <option value="today">
+      Today
+    </option>
+    <option value="week">
+      This week
+    </option>
+    <option value="month">
+      This month
+    </option>
+    <option
+      value="last_month"
+    >
+      Last month
+    </option>
+    <option value="year">
+      This year
+    </option>
+    <option
+      value="custom"
+    >
+      Custom range
+    </option>
+    <option value="all">
+      All time
+    </option>
+  </select>
+  <div class="custom-range">
+    <label class="sr-only" for="range-start">Start date</label
+    ><input
+      class="form-control compact-control"
+      id="range-start"
+      type="date"
+      name="start"
+      value="{{ bounds.start|date:'Y-m-d' }}"
+    /><span>to</span><label class="sr-only" for="range-end">End date</label
+    ><input
+      class="form-control compact-control"
+      id="range-end"
+      type="date"
+      name="end"
+      value="{{ bounds.end|date:'Y-m-d' }}"
+    />
+  </div>
+  <button
+    class="icon-button apply-filter"
+    type="submit"
+    aria-label="Apply date range"
+  >
+    <i data-lucide="arrow-right"></i>
+  </button>
+</form>
+<div class="analysis-stat-grid">
+  <article>
+    <span>Avg. monthly spend</span
+    ><strong
+      >₹{{ metrics.average_monthly_spending|floatformat:0|intcomma }}</strong
+    >
+  </article>
+  <article>
+    <span>Average expense</span
+    ><strong>₹{{ metrics.average_expense|floatformat:0|intcomma }}</strong>
+  </article>
+  <article>
+    <span>Median expense</span
+    ><strong>₹{{ metrics.median_expense|floatformat:0|intcomma }}</strong>
+  </article>
+  <article>
+    <span>Largest expense</span
+    ><strong>
+      {% if metrics.high_expense %}
+      ₹{{ metrics.high_expense.amount|floatformat:0|intcomma }}
+      {% else %}₹0{% endif %}
+    </strong>
+  </article>
+  <article>
+    <span>Smallest expense</span
+    ><strong>
+      {% if metrics.low_expense %}
+      ₹{{ metrics.low_expense.amount|floatformat:0|intcomma }}
+      {% else %}₹0{% endif %}
+    </strong>
+  </article>
+</div>
+<div class="chart-grid analytics-grid">
+  <article class="panel chart-panel chart-wide">
+    <div class="panel-heading">
+      <div>
+        <h3>Income vs. expenses</h3>
+        <p>Monthly cash flow</p>
+      </div>
+      <span class="chart-legend"
+        ><i class="legend-dot income-dot"></i>Income
+        <i class="legend-dot expense-dot"></i>Expenses</span
+      >
+    </div>
+    <div class="chart-wrap tall-chart">
+      <canvas
+        id="cashflow-chart"
+        aria-label="Monthly income compared with expenses"
+      ></canvas>
+    </div>
+  </article>
+  <article class="panel chart-panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Spending by category</h3>
+        <p>{{ metrics.highest_category }} leads this period</p>
+      </div>
+    </div>
+    <div class="donut-wrap">
+      <canvas
+        id="category-chart"
+        aria-label="Expense distribution by category"
+      ></canvas>
+    </div>
+    <div class="analysis-legend">
+      {% for row in metrics.category_rows %}
+      <div>
+        <span class="category-key-name"
+          ><i class="legend-dot category-dot-{{ forloop.counter }}"></i>{{ row.category }}</span
+        ><span>₹{{ row.amount|floatformat:0|intcomma }} · {{ row.percentage }}%</span>
+      </div>
+      {% empty %}
+      <p class="empty-note">No spending in this range.</p>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel chart-panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Spending trend</h3>
+        <p>Month-by-month expenses</p>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="spending-chart" aria-label="Monthly spending trend"></canvas>
+    </div>
+  </article>
+  <article class="panel chart-panel">
+    <div class="panel-heading">
+      <div>
+        <h3>Savings trend</h3>
+        <p>Income after expenses</p>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="savings-chart" aria-label="Monthly savings trend"></canvas>
+    </div>
+  </article>
+</div>
+<div class="lower-grid analytics-lower">
+  <article class="panel table-panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">DAILY DETAIL</p>
+        <h3>Daily spending</h3>
+      </div>
+    </div>
+    {% if metrics.daily_rows %}
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th class="align-right">Spent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for day in metrics.daily_rows %}
+          <tr>
+            <td>{{ day.date|date:'M j, Y' }}</td>
+            <td class="align-right amount-cell">
+              ₹{{ day.amount|floatformat:2|intcomma }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty-note padded-note">
+      No daily expense data for this date range.
+    </p>
+    {% endif %}
+  </article>
+  <article class="panel table-panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">INCOME SOURCES</p>
+        <h3>Income by category</h3>
+      </div>
+    </div>
+    {% if metrics.income_sources %}
+    <div class="source-list">
+      {% for source in metrics.income_sources %}
+      <div class="source-row">
+        <span
+          ><i class="legend-dot category-dot-{{ forloop.counter }}"></i>{{ source.category }}</span
+        ><strong>₹{{ source.amount|floatformat:2|intcomma }}</strong>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-note padded-note">
+      No income recorded for this date range.
+    </p>
+    {% endif %}
+  </article>
+</div>
+{{ metrics|json_script:'dashboard-chart-data' }} {% endblock %}

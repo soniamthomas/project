@@ -1,0 +1,157 @@
+{% extends 'finance/base.html' %}
+
+{% block title %}Budgets{% endblock %}
+
+{% block breadcrumb %}Budgets{% endblock %}
+
+{% block content %}
+<div class="page-heading heading-row">
+  <div>
+    <p class="eyebrow">MAKE ROOM FOR WHAT MATTERS</p>
+    <h1>Monthly budgets</h1>
+    <p class="heading-copy">
+      Set a limit by category and keep an eye on the pace.
+    </p>
+  </div>
+</div>
+<div class="budget-layout">
+  <section class="panel budget-editor">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">PLAN AHEAD</p>
+        <h3>Set a category budget</h3>
+      </div>
+      <span class="metric-icon yellow"><i data-lucide="wallet-cards"></i></span>
+    </div>
+    <form method="post" novalidate>
+      {% csrf_token %}{% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="budget-form-fields">
+        {% for field in form %}
+        <div class="field-wrap">
+          <label for="{{ field.id_for_label }}"
+            >{{ field.label }}{% if field.field.required %}<span
+              class="required-mark"
+              >*</span
+            >{% endif %}</label
+          >{{ field }}{% for error in field.errors %}<small class="field-error"
+            >{{ error }}</small
+          >{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">
+          <i data-lucide="check"></i>Save budget
+        </button>
+        <a class="button button-quiet" href="{% url 'finance:budgets' %}">Cancel</a>
+      </div>
+    </form>
+    <div class="budget-threshold-note">
+      <i data-lucide="info"></i
+      ><span>Heads-up at 80%. Over 100% is marked exceeded.</span>
+    </div>
+  </section>
+  <section class="budget-overview">
+    <div class="budget-month-heading">
+      <div>
+        <p class="eyebrow">CURRENT VIEW</p>
+        <h2>{{ month_name }}</h2>
+      </div>
+      <form method="get" class="month-picker">
+        <label class="sr-only" for="budget-month">Month</label
+        ><input
+          id="budget-month"
+          name="month"
+          class="form-control"
+          type="number"
+          min="1"
+          max="12"
+          value="{{ selected_month }}"
+          aria-label="Budget month"
+        /><label class="sr-only" for="budget-year">Year</label
+        ><input
+          id="budget-year"
+          name="year"
+          class="form-control"
+          type="number"
+          min="2000"
+          max="9999"
+          value="{{ selected_year }}"
+          aria-label="Budget year"
+        /><button class="icon-button" type="submit" aria-label="View month">
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+    </div>
+    {% for row in budget_rows %}
+    <article class="panel budget-card">
+      <div class="budget-card-heading">
+        <div class="budget-category">
+          <span class="budget-category-icon category-icon-{{ forloop.counter }}"
+            ><i
+              data-lucide="{% if row.budget.category == 'Food' %}utensils{% elif row.budget.category == 'Transportation' %}bus-front{% elif row.budget.category == 'Shopping' %}shopping-bag{% elif row.budget.category == 'Bills & Utilities' %}receipt{% elif row.budget.category == 'Health' %}heart-pulse{% elif row.budget.category == 'Travel' %}plane{% else %}circle-dollar-sign{% endif %}"
+            ></i></span
+          ><span
+            ><strong>{{ row.budget.category }}</strong
+            ><small>Monthly limit</small></span
+          >
+        </div>
+        <div class="budget-card-actions">
+          <a
+            class="icon-button small-button"
+            href="{% url 'finance:budget_edit' row.budget.pk %}"
+            aria-label="Edit {{ row.budget.category }} budget"
+            ><i data-lucide="pencil"></i
+          ></a>
+          <form
+            method="post"
+            action="{% url 'finance:budget_delete' row.budget.pk %}"
+            class="inline-form"
+            onsubmit="return confirm('Delete this budget?');"
+          >
+            {% csrf_token %}<button
+              class="icon-button small-button danger-button"
+              type="submit"
+              aria-label="Delete {{ row.budget.category }} budget"
+            >
+              <i data-lucide="trash-2"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      <div class="budget-amount-line">
+        <strong
+          >₹{{ row.spent|floatformat:2|intcomma }} <small>spent</small></strong
+        ><span>of ₹{{ row.budget.amount|floatformat:2|intcomma }}</span>
+      </div>
+      <div class="progress-track large-progress">
+        <span
+          class="progress-fill {{ row.status }}"
+          style="width: {{ row.utilization }}%"
+        ></span>
+      </div>
+      <div class="budget-line-meta">
+        <span class="status-label {{ row.status }}">
+          {% if row.status == 'exceeded' %}
+          <i data-lucide="triangle-alert"></i>Exceeded by ₹{{ row.overage|floatformat:2|intcomma }}
+          {% elif row.status == 'warning' %}
+          <i data-lucide="circle-alert"></i>Approaching limit
+          {% else %}
+          <i data-lucide="circle-check"></i>On track
+          {% endif %}
+        </span>
+        <span>{{ row.actual_utilization|floatformat:0 }}% used</span>
+      </div>
+    </article>
+    {% empty %}
+    <div class="empty-state budget-empty">
+      <span class="empty-illustration"><i data-lucide="target"></i></span
+      ><strong>No budgets for {{ month_name }}</strong>
+      <p>Choose a category and monthly limit to start tracking your pace.</p>
+    </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

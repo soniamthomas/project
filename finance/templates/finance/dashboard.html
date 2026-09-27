@@ -1,0 +1,133 @@
+{% extends 'finance/base.html' %}
+
+{% block content %}
+<div class="page-heading heading-row">
+  <div>
+    <p class="eyebrow">YOUR FINANCIAL SNAPSHOT</p>
+    <h1>Your money, in focus.</h1>
+    <p class="heading-copy">A clear view of what came in, what went out, and what stays.</p>
+  </div>
+  <span class="date-stamp">
+    <i data-lucide="calendar-days"></i>
+    {{ bounds.start|date:'M j' }} – {{ bounds.end|date:'M j, Y' }}
+  </span>
+</div>
+
+<form class="filter-bar" method="get" action="{% url 'finance:dashboard' %}">
+  <div class="filter-title"><i data-lucide="calendar-range"></i><span>Date range</span></div>
+  <label class="sr-only" for="period-filter">Date range</label>
+  <select id="period-filter" name="period" class="form-control compact-control" data-selected-period="{{ bounds.period }}">
+    <option value="today">Today</option>
+    <option value="week">This week</option>
+    <option value="month">This month</option>
+    <option value="last_month">Last month</option>
+    <option value="year">This year</option>
+    <option value="custom">Custom range</option>
+    <option value="all">All time</option>
+  </select>
+  <div class="custom-range" hidden>
+    <label class="sr-only" for="range-start">Start date</label>
+    <input class="form-control compact-control" id="range-start" type="date" name="start" value="{{ bounds.start|date:'Y-m-d' }}">
+    <span>to</span>
+    <label class="sr-only" for="range-end">End date</label>
+    <input class="form-control compact-control" id="range-end" type="date" name="end" value="{{ bounds.end|date:'Y-m-d' }}">
+  </div>
+  <button class="icon-button apply-filter" type="submit" aria-label="Apply date range"><i data-lucide="arrow-right"></i></button>
+</form>
+
+<div class="metric-grid">
+  <article class="metric-card balance-card">
+    <div class="metric-top"><span>Net balance</span><span class="metric-icon"><i data-lucide="scale"></i></span></div>
+    <strong class="metric-value">&#8377;{{ metrics.balance|floatformat:2|intcomma }}</strong>
+    <span class="metric-foot">Income minus expenses · selected period</span>
+    <div class="balance-spark" aria-hidden="true"></div>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Total income</span><span class="metric-icon mint"><i data-lucide="trending-up"></i></span></div>
+    <strong class="metric-value">&#8377;{{ metrics.income|floatformat:2|intcomma }}</strong>
+    <span class="metric-foot positive">{{ metrics.transaction_count }} transactions tracked</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Total expenses</span><span class="metric-icon coral"><i data-lucide="trending-down"></i></span></div>
+    <strong class="metric-value">&#8377;{{ metrics.expenses|floatformat:2|intcomma }}</strong>
+    <span class="metric-foot">Average expense &#8377;{{ metrics.average_expense|floatformat:0|intcomma }}</span>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Savings rate</span><span class="metric-icon yellow"><i data-lucide="piggy-bank"></i></span></div>
+    <strong class="metric-value">{{ metrics.savings_rate|floatformat:1 }}<small>%</small></strong>
+    <span class="metric-foot">&#8377;{{ metrics.savings|floatformat:2|intcomma }} saved in this period</span>
+  </article>
+</div>
+
+<div class="detail-strip">
+  <div><span class="detail-label"><i data-lucide="calendar-check"></i>This month income</span><strong>&#8377;{{ month_income|floatformat:2|intcomma }}</strong></div>
+  <div><span class="detail-label"><i data-lucide="calendar-minus"></i>This month expenses</span><strong>&#8377;{{ month_expenses|floatformat:2|intcomma }}</strong></div>
+  <div><span class="detail-label"><i data-lucide="award"></i>Highest category</span><strong>{{ metrics.highest_category }}</strong></div>
+  <div><span class="detail-label"><i data-lucide="receipt-text"></i>Transactions</span><strong>{{ metrics.transaction_count }}</strong></div>
+</div>
+
+<div class="section-heading">
+  <div><p class="eyebrow">THE BIG PICTURE</p><h2>Cash flow &amp; spending</h2></div>
+  <a class="text-link" href="{% url 'finance:analytics' %}?period={{ bounds.period }}&start={{ bounds.start|date:'Y-m-d' }}&end={{ bounds.end|date:'Y-m-d' }}">Explore analytics <i data-lucide="arrow-up-right"></i></a>
+</div>
+<div class="chart-grid dashboard-charts">
+  <article class="panel chart-panel chart-wide">
+    <div class="panel-heading"><div><h3>Income vs. expenses</h3><p>Monthly movement across the selected range</p></div><span class="chart-legend"><i class="legend-dot income-dot"></i>Income <i class="legend-dot expense-dot"></i>Expenses</span></div>
+    <div class="chart-wrap"><canvas id="cashflow-chart" aria-label="Monthly income compared with expenses"></canvas></div>
+  </article>
+  <article class="panel chart-panel">
+    <div class="panel-heading"><div><h3>Where it goes</h3><p>Expense share by category</p></div><span class="mini-count">{{ metrics.category_rows|length }} categories</span></div>
+    <div class="donut-wrap"><canvas id="category-chart" aria-label="Expense distribution by category"></canvas></div>
+    <div class="category-key">
+      {% for row in metrics.category_rows|slice:':4' %}
+      <div><span class="category-key-name"><i class="legend-dot category-dot-{{ forloop.counter }}"></i>{{ row.category }}</span><strong>{{ row.percentage }}%</strong></div>
+      {% empty %}
+      <p class="empty-note">Add expenses to see your category mix.</p>
+      {% endfor %}
+    </div>
+  </article>
+</div>
+
+<div class="lower-grid">
+  <article class="panel table-panel">
+    <div class="panel-heading"><div><p class="eyebrow">LATEST ACTIVITY</p><h3>Recent transactions</h3></div><a class="text-link" href="{% url 'finance:transactions' %}">All transactions <i data-lucide="arrow-right"></i></a></div>
+    {% if recent_transactions %}
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Transaction</th><th>Date</th><th>Category</th><th class="align-right">Amount</th></tr></thead>
+        <tbody>
+          {% for transaction in recent_transactions %}
+          <tr>
+            <td><span class="transaction-name"><span class="transaction-icon"><i data-lucide="receipt"></i></span><span><strong>{{ transaction.description }}</strong><small>{{ transaction.get_payment_method_display }}</small></span></span></td>
+            <td class="muted-cell">{{ transaction.transaction_date|date:'M j' }}</td>
+            <td><span class="category-pill">{{ transaction.category }}</span></td>
+            <td class="align-right amount-cell"><span class="{% if transaction.type == 'income' %}income-text{% endif %}">{% if transaction.type == 'income' %}+{% else %}-{% endif %}&#8377;{{ transaction.amount|floatformat:2|intcomma }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state compact-empty">
+      <span class="empty-illustration"><i data-lucide="notebook-pen"></i></span>
+      <strong>No transactions in this range</strong>
+      <p>Record your first entry to bring this dashboard to life.</p>
+      <a class="button button-secondary" href="{% url 'finance:transaction_add' %}"><i data-lucide="plus"></i>Add transaction</a>
+    </div>
+    {% endif %}
+  </article>
+  <article class="panel budget-panel">
+    <div class="panel-heading"><div><p class="eyebrow">MONTHLY PLAN</p><h3>Budget pulse</h3></div><a class="icon-button small-button" href="{% url 'finance:budgets' %}" aria-label="Manage budgets" title="Manage budgets"><i data-lucide="arrow-up-right"></i></a></div>
+    {% for row in budget_rows %}
+    <div class="budget-line">
+      <div class="budget-line-heading"><span>{{ row.budget.category }}</span><strong>&#8377;{{ row.spent|floatformat:0|intcomma }} <small>/ &#8377;{{ row.budget.amount|floatformat:0|intcomma }}</small></strong></div>
+      <div class="progress-track"><span class="progress-fill {{ row.status }}" style="width: {{ row.utilization }}%"></span></div>
+      <div class="budget-line-meta"><span class="status-label {{ row.status }}">{% if row.status == 'exceeded' %}Over budget{% elif row.status == 'warning' %}Near limit{% else %}On track{% endif %}</span><span>{{ row.actual_utilization|floatformat:0 }}%</span></div>
+    </div>
+    {% empty %}
+    <div class="empty-budget"><span class="empty-illustration"><i data-lucide="wallet"></i></span><p>No monthly budgets yet.</p><a class="text-link" href="{% url 'finance:budgets' %}">Set a category budget <i data-lucide="arrow-right"></i></a></div>
+    {% endfor %}
+  </article>
+</div>
+{{ chart_metrics|json_script:'dashboard-chart-data' }}
+{% endblock %}
